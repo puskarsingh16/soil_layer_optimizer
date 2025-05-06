@@ -966,102 +966,204 @@ def calculate_pressure_profile(layers, gwt_depth):
     gamma_w = 9.81  # Unit weight of water in kN/m³
     
     # Create detailed pressure profile for plotting
-    depths = []
-    pressures = []
+#     depths = []
+#     pressures = []
     
+#     cumulative_depth = 0
+#     cumulative_vertical_stress = 0
+    
+#     for i, layer in enumerate(layers):
+#         ka = layer.ka()
+#         layer_top = cumulative_depth
+#         layer_bottom = cumulative_depth + layer.thickness
+        
+#         # Add point at the top of the layer
+#         if i > 0 and len(depths) > 0:
+#             # Add a point with the new Ka at the layer boundary
+#             depths.append(layer_top)
+#             pressures.append(ka * cumulative_vertical_stress)
+#         else:
+#             depths.append(layer_top)
+#             pressures.append(ka * cumulative_vertical_stress)
+        
+#         # Calculate points within the layer
+#         if gwt_depth is not None and layer_top < gwt_depth < layer_bottom:
+#             # Layer intersects with GWT
+            
+#             # Points above GWT
+#             z_above = np.linspace(layer_top, gwt_depth, 50)
+#             for z in z_above:
+#                 local_depth = z - layer_top
+#                 vertical_stress = cumulative_vertical_stress + layer.gamma * local_depth
+#                 depths.append(z)
+#                 pressures.append(ka * vertical_stress)
+            
+#             # Points below GWT
+#             z_below = np.linspace(gwt_depth, layer_bottom, 50)
+#             for z in z_below:
+#                 local_depth_above_gwt = gwt_depth - layer_top
+#                 local_depth_below_gwt = z - gwt_depth
+#                 vertical_stress = (cumulative_vertical_stress + 
+#                                   layer.gamma * local_depth_above_gwt + 
+#                                   (layer.gamma - gamma_w) * local_depth_below_gwt)
+#                 depths.append(z)
+#                 pressures.append(ka * vertical_stress)
+#         else:
+#             # Layer doesn't intersect GWT
+#             z_values = np.linspace(layer_top, layer_bottom, 100)
+#             for z in z_values:
+#                 local_depth = z - layer_top
+#                 if gwt_depth is not None and z > gwt_depth:
+#                     # Below GWT
+#                     if layer_top >= gwt_depth:
+#                         # Entire layer is below GWT
+#                         vertical_stress = cumulative_vertical_stress + (layer.gamma - gamma_w) * local_depth
+#                     else:
+#                         # Should not reach here as this case is handled above
+#                         pass
+#                 else:
+#                     # Above GWT
+#                     vertical_stress = cumulative_vertical_stress + layer.gamma * local_depth
+                
+#                 depths.append(z)
+#                 pressures.append(ka * vertical_stress)
+        
+#         # Update cumulative values for next layer
+#         if gwt_depth is not None and layer_bottom > gwt_depth:
+#             if layer_top >= gwt_depth:
+#                 # Entire layer is below GWT
+#                 cumulative_vertical_stress += (layer.gamma - gamma_w) * layer.thickness
+#             else:
+#                 # Layer intersects GWT
+#                 above_gwt = gwt_depth - layer_top
+#                 below_gwt = layer_bottom - gwt_depth
+#                 cumulative_vertical_stress += (layer.gamma * above_gwt + 
+#                                              (layer.gamma - gamma_w) * below_gwt)
+#         else:
+#             cumulative_vertical_stress += layer.gamma * layer.thickness
+        
+#         cumulative_depth = layer_bottom
+    
+#     return list(zip(depths, pressures))
+
+# def total_force(layers, gwt_depth):
+#     pressure_profile = calculate_pressure_profile(layers, gwt_depth)
+#     depths = [p[0] for p in pressure_profile]
+#     pressures = [p[1] for p in pressure_profile]
+    
+#     force = 0
+#     for i in range(len(depths) - 1):
+#         h = depths[i+1] - depths[i]
+#         avg_pressure = (pressures[i] + pressures[i+1]) / 2
+#         force += avg_pressure * h
+    
+#     return force
+
+# def optimize_layers(layers, gwt_depth):
+#     best_perm = min(itertools.permutations(layers), key=lambda perm: total_force(perm, gwt_depth))
+#     return best_perm, total_force(best_perm, gwt_depth)
+
+def compute_total_force(layers, gwt_depth):
+    gamma_w = 9.81
+    total_force = 0
     cumulative_depth = 0
     cumulative_vertical_stress = 0
-    
-    for i, layer in enumerate(layers):
-        ka = layer.ka()
-        layer_top = cumulative_depth
-        layer_bottom = cumulative_depth + layer.thickness
-        
-        # Add point at the top of the layer
-        if i > 0 and len(depths) > 0:
-            # Add a point with the new Ka at the layer boundary
-            depths.append(layer_top)
-            pressures.append(ka * cumulative_vertical_stress)
-        else:
-            depths.append(layer_top)
-            pressures.append(ka * cumulative_vertical_stress)
-        
-        # Calculate points within the layer
-        if gwt_depth is not None and layer_top < gwt_depth < layer_bottom:
-            # Layer intersects with GWT
-            
-            # Points above GWT
-            z_above = np.linspace(layer_top, gwt_depth, 50)
-            for z in z_above:
-                local_depth = z - layer_top
-                vertical_stress = cumulative_vertical_stress + layer.gamma * local_depth
-                depths.append(z)
-                pressures.append(ka * vertical_stress)
-            
-            # Points below GWT
-            z_below = np.linspace(gwt_depth, layer_bottom, 50)
-            for z in z_below:
-                local_depth_above_gwt = gwt_depth - layer_top
-                local_depth_below_gwt = z - gwt_depth
-                vertical_stress = (cumulative_vertical_stress + 
-                                  layer.gamma * local_depth_above_gwt + 
-                                  (layer.gamma - gamma_w) * local_depth_below_gwt)
-                depths.append(z)
-                pressures.append(ka * vertical_stress)
-        else:
-            # Layer doesn't intersect GWT
-            z_values = np.linspace(layer_top, layer_bottom, 100)
-            for z in z_values:
-                local_depth = z - layer_top
-                if gwt_depth is not None and z > gwt_depth:
-                    # Below GWT
-                    if layer_top >= gwt_depth:
-                        # Entire layer is below GWT
-                        vertical_stress = cumulative_vertical_stress + (layer.gamma - gamma_w) * local_depth
-                    else:
-                        # Should not reach here as this case is handled above
-                        pass
-                else:
-                    # Above GWT
-                    vertical_stress = cumulative_vertical_stress + layer.gamma * local_depth
-                
-                depths.append(z)
-                pressures.append(ka * vertical_stress)
-        
-        # Update cumulative values for next layer
-        if gwt_depth is not None and layer_bottom > gwt_depth:
-            if layer_top >= gwt_depth:
-                # Entire layer is below GWT
-                cumulative_vertical_stress += (layer.gamma - gamma_w) * layer.thickness
-            else:
-                # Layer intersects GWT
-                above_gwt = gwt_depth - layer_top
-                below_gwt = layer_bottom - gwt_depth
-                cumulative_vertical_stress += (layer.gamma * above_gwt + 
-                                             (layer.gamma - gamma_w) * below_gwt)
-        else:
-            cumulative_vertical_stress += layer.gamma * layer.thickness
-        
-        cumulative_depth = layer_bottom
-    
-    return list(zip(depths, pressures))
 
-def total_force(layers, gwt_depth):
-    pressure_profile = calculate_pressure_profile(layers, gwt_depth)
-    depths = [p[0] for p in pressure_profile]
-    pressures = [p[1] for p in pressure_profile]
-    
-    force = 0
-    for i in range(len(depths) - 1):
-        h = depths[i+1] - depths[i]
-        avg_pressure = (pressures[i] + pressures[i+1]) / 2
-        force += avg_pressure * h
-    
-    return force
+    for layer in layers:
+        h = layer.thickness
+        gamma = layer.gamma
+        phi = layer.phi
+        Ka = math.tan(math.radians(45 - phi / 2)) ** 2
+
+        z_local = np.linspace(0, h, 100)
+        z_absolute = cumulative_depth + z_local
+
+        vertical_stress = np.zeros_like(z_local)
+        for j, depth in enumerate(z_absolute):
+            if gwt_depth is None or depth <= gwt_depth:
+                vertical_stress[j] = gamma * (depth - cumulative_depth) + cumulative_vertical_stress
+            else:
+                submerged_depth = depth - gwt_depth
+                vertical_stress[j] = (
+                    gamma * (gwt_depth - cumulative_depth) +
+                    (gamma - gamma_w) * submerged_depth +
+                    cumulative_vertical_stress
+                )
+
+        sigma_a = Ka * vertical_stress
+        layer_force = np.trapz(sigma_a, z_absolute)
+        total_force += layer_force
+        cumulative_vertical_stress += gamma * h
+        cumulative_depth += h
+
+    return total_force
 
 def optimize_layers(layers, gwt_depth):
-    best_perm = min(itertools.permutations(layers), key=lambda perm: total_force(perm, gwt_depth))
-    return best_perm, total_force(best_perm, gwt_depth)
+    best_perm = min(itertools.permutations(layers), key=lambda perm: compute_total_force(perm, gwt_depth))
+    return best_perm, compute_total_force(best_perm, gwt_depth)
+
+
+# ----------------- Detailed Plot Function -----------------
+def plot_detailed_graph(layers, gwt_depth, title, ax):
+    colors = ['blue', 'green', 'red', 'orange', 'purple']
+    cumulative_depth = 0
+    cumulative_vertical_stress = 0
+    gamma_w = 9.81
+    sigma_prev = 0
+    mid_x = -5
+
+    for i, layer in enumerate(layers):
+        h = layer.thickness
+        gamma = layer.gamma
+        phi = layer.phi
+        label = layer.name
+
+        Ka = math.tan(math.radians(45 - phi / 2)) ** 2
+        z_local = np.linspace(0, h, 100)
+        z_absolute = cumulative_depth + z_local
+
+        vertical_stress = np.zeros_like(z_local)
+        for j, depth in enumerate(z_absolute):
+            if gwt_depth is None or depth <= gwt_depth:
+                vertical_stress[j] = gamma * (depth - cumulative_depth) + cumulative_vertical_stress
+            else:
+                submerged_depth = depth - gwt_depth
+                vertical_stress[j] = (
+                    gamma * (gwt_depth - cumulative_depth) +
+                    (gamma - gamma_w) * submerged_depth +
+                    cumulative_vertical_stress
+                )
+
+        sigma_a = Ka * vertical_stress
+        ax.plot(sigma_a, z_absolute, color=colors[i % len(colors)],
+                label=f"{label} (ϕ={phi}°, γ={gamma})")
+
+        # Transitions and labels
+        if i > 0:
+            ax.hlines(cumulative_depth, sigma_prev, sigma_a[0], colors='black', linestyles='dashed', linewidth=1)
+        sigma_end = sigma_a[-1]
+        z_end = z_absolute[-1]
+        ax.hlines(z_end, 0, sigma_end, colors='gray', linestyles='dotted', linewidth=1)
+        ax.text(sigma_end / 2, z_end + 0.2, f"{sigma_end:.1f} kPa", fontsize=8, ha='center')
+        z_mid = cumulative_depth + h / 2
+        ax.vlines(mid_x, cumulative_depth, cumulative_depth + h, colors='black')
+        ax.text(mid_x - 0.5, z_mid, f"{h} m", va='center', ha='center', fontsize=8, rotation=90,
+                bbox=dict(facecolor='white', edgecolor='gray'))
+
+        sigma_prev = sigma_end
+        cumulative_vertical_stress += gamma * h
+        cumulative_depth += h
+
+    if gwt_depth is not None:
+        ax.axhline(y=gwt_depth, color='cyan', linestyle='--', linewidth=2, label='GWT')
+
+    ax.invert_yaxis()
+    ax.set_xlabel("σₐ (kPa)")
+    ax.set_ylabel("Depth (m)")
+    ax.set_title(title)
+    ax.grid(True)
+    # ax.legend(loc='upper right')
+    ax.set_xlim(mid_x - 3, None)
 
 # ------------------- Streamlit App -------------------
 st.markdown('<h1 class="main-header">🧱 Soil Layer Optimizer</h1>', unsafe_allow_html=True)
